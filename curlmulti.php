@@ -9,11 +9,17 @@
 class CurlMulti {
 
 	public $multi_init;
-	public $curl_init = array();
+	public $curl_init;
+
+	public $proxy_address;
+	public $proxy_auth;
+
+	public $cookie_file;
 
 	public function __construct() {
 
 		$this->multi_init = curl_multi_init();
+		$this->curl_init = array();
 	}
 
 	/**
@@ -32,9 +38,26 @@ class CurlMulti {
 		curl_setopt_array($ch, $curl_params); //overwride default parameters or add new
 
 		if ($type == 'POST') {
+
 			curl_setopt($ch, CURLOPT_POST, 1);
 			curl_setopt($ch, CURLOPT_POSTFIELDS, $post_fields);
 		}
+
+		if (!empty($this->proxy_address)) {
+
+			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+			curl_setopt($ch, CURLOPT_PROXY, $this->proxy_address);
+			curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->proxy_auth);
+
+		}
+
+		if (!empty($this->cookie_file)) {
+
+			curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file); //store changes
+			curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file); //cookie file to read
+
+		}
+
 		curl_multi_add_handle($this->multi_init, $ch);
 	}
 
@@ -74,6 +97,33 @@ class CurlMulti {
 			call_user_func($callback, $content);
 
 		}
+
+	}
+
+	/**
+	 * Proxy configurations
+	 * @param string $address  proxy server address
+	 * @param string $user     proxy server user
+	 * @param string $password proxy server password
+	 */
+	public function setProxy($address, $user = null, $password = null) {
+
+		$this->proxy_address = $address;
+
+		if (!is_null($user)) {
+
+			$this->proxy_auth = $user . ":" . $password;
+
+		}
+	}
+
+	/**
+	 * Set cookie file name
+	 * @param string $cookie_file cookie file name
+	 */
+	public function setCookie($cookie_file) {
+
+		$this->cookie_file = $cookie_file;
 
 	}
 
